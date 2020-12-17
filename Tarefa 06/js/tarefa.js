@@ -5,12 +5,14 @@ var controls;
 
 var velocity = 0.1;
 
+var ambientLight;
+
 var ground;
 
 var objLoader;
 var textureLoader;
 
-var spotLight;
+// var spotLight;
 
 var obj; //objeto dinamico.
 
@@ -38,7 +40,11 @@ var guiFunction = function(){
         animais: ""
     };    
 
+    var pastAmb = gui.addFolder("Luz Ambiente");
+
     gui.add(param, 'campoTexto').name("nome obj");
+
+    
     
     var scale = gui.add(param, 'escala').min(0.1).max(5).step(0.1).name("escala");
     scale.onChange(function (parametroQualquer){
@@ -50,12 +56,8 @@ var guiFunction = function(){
 
     var colore = gui.addColor(param, 'cor').name("Cor Obj");
     colore.onChange(function (parametroQualquer){
-        console.log(objCarregado);
-        objCarregado.traverse( function ( child ) {
-            if ( child instanceof THREE.Mesh ) {
-                child.material.color.setHex(parametroQualquer.replace("#", "0x"));
-            }
-        });
+        
+        ambientLight.color.setHex(parametroQualquer.replace("#", "0x"));
         //cotovelo.material.color.setHex(parametroQualquer.replace("#", "0x"));
     });
 
@@ -463,17 +465,22 @@ var init = function() {
 
     //Iluminação 
     //Não se preocupe com essa parte por enquanto, apenas usem :)
-    spotLight = new THREE.SpotLight( 0xffffff );
-    scene.add(spotLight);
-    spotLight.position.set( 100, 100, 100 );
-    spotLight.castShadow = false;
-    spotLight.shadow.mapSize.width = 100;
-    spotLight.shadow.mapSize.height = 100;
-    spotLight.shadow.camera.near = 1;
-    spotLight.shadow.camera.far = 99;
-    spotLight.shadow.camera.fov = 40;
+    // spotLight = new THREE.SpotLight( 0xffffff , 0.5);
+    // scene.add(spotLight);
+    // spotLight.position.set( 100, 100, 100 );
+    // spotLight.castShadow = true;
+    // spotLight.shadow.mapSize.width = 0;
+    // spotLight.shadow.mapSize.height = 0;
+    // spotLight.shadow.camera.near = 1;
+    // spotLight.shadow.camera.far = 99;
+    // spotLight.shadow.camera.fov = 40;
 
-    renderer.shadowMap.enable = false;
+    ambientLight = new THREE.AmbientLight(0X888888);
+    ambientLight.intensity = 1.3;
+
+    // scene.add(ambientLight);
+
+    renderer.shadowMap.enable = true;
     renderer.shadowMap.type = THREE.BasicShadowMap;
 
     //controls = new THREE.OrbitControls( camera, renderer.domElement );
