@@ -7,9 +7,16 @@ var moveBackward = false;
 var moveLeft = false;
 var moveRight = false;
 
-var rotationVelocity = 0.1;
+var rotationSpeed = 0.05;
 
-var velocity = 2;
+var direction = new THREE.Vector3(0, 1, 0);
+var velocity = 0;
+var speed = 0;
+var maxSpeed = 1;
+var accel = 0.01;
+var deaccel = 0.01;
+
+const noventa = Math.PI / 2;
 
 red = new THREE.Color(1, 0, 0);
 green = new THREE.Color(0, 1, 0);
@@ -43,10 +50,18 @@ function criaCubo(position_x, position_y, position_z, x,y,z, color){
     pintaCubo(cubo_geometria, colors);
 }
 
-function reposiciona(position_x, position_y, position_z, objeto){
-    objeto.position.x = position_x;
-    objeto.position.y = position_y;
-    objeto.position.z = position_z;
+function createWheel(x, y, scale, vehicle){
+    var wheel_geometry = new THREE.TorusGeometry( 5, 3, 8, 100 );
+    wheel_material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+    wheel = new THREE.Mesh( wheel_geometry, wheel_material );
+    wheel.rotation.x = noventa;
+    wheel.position.x += x;
+    wheel.position.y += y;
+    wheel.rotation.y = noventa;
+    wheel.scale.x = scale;
+    wheel.scale.y = scale;
+    wheel.scale.z = scale;
+    vehicle.add(wheel);
 }
 
 function init() {
@@ -64,32 +79,13 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // this.criaCubo( 10, -2.5, 10, 5, 5, 5, 0x333333);
-    // // this.criaCubo( 0, -2.5, 0, 5, 5, 5, 0x770777);
-    // cone_geometry = new THREE.ConeBufferGeometry( 5, 20, 32 );
-    // cone_material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
-    // cone = new THREE.Mesh( cone_geometry, cone_material );
-    // this.reposiciona(0, 2.5, 0, cone);
-    // scene.add(cone);
-    // // this.criaCubo( -20, -2.5, 40, 5, 5, 5, 0xff00ff);
-    // cilindro_geometry = new THREE.CylinderBufferGeometry( 5, 5, 20, 32 );
-    // cilindro_material = new THREE.MeshBasicMaterial( {color: 0x006400} );
-    // cilindro = new THREE.Mesh( cilindro_geometry, cilindro_material );
-    // scene.add(cilindro);
-    // this.reposiciona(-20, 5, 40, cilindro);
-    // scene.add(cilindro);
-    // // this.criaCubo( 30, -2.5, 20, 5, 5, 5, 0xfaaaff);
-    // dodecaedro_material = new THREE.MeshStandardMaterial( { color: 0x006400 } );
-    // dodecaedro_geometry = new THREE.DodecahedronBufferGeometry(2,0);
-    // dodecaedro = new THREE.Mesh(dodecaedro_geometry, dodecaedro_material);
-    // this.reposiciona(20, -4, 20, dodecaedro);
-    // scene.add(dodecaedro);
-    // this.criaCubo( -30, -2.5, -40, 5, 5, 5, 0xaaaaaa);
-   
-	camera.position.set( 0, 0, 100 );
+    criaCubo( 10, -2.5, 10, 5, 10, 5, 0xFFFFFF);
+    createWheel(3, 1, 0.15, cubo);
+    createWheel(-3, 1, 0.15, cubo);
+    createWheel(3, -3, 0.15, cubo);
+    createWheel(-3, -3, 0.15, cubo);
 
-    //Essas linhas criam o gridView, lembrando que ele basicamente Ã© sÃ³ uma grade de linhas no eixo X
-    //scene.add( new THREE.GridHelper( 400, 40 ) );
+	camera.position.set( 0, 0, 100 );
     
    /*Para criar o plano */
    chao = new THREE.Mesh(
@@ -125,14 +121,13 @@ function onKeyDown(event){
         case 87:    moveForward = true; break; 
 
         case 40://baixo
-        case 83:    moveBackward = true; break;
+        case 83:    moveBackward = true; rotationSpeed *= -1; break;
 
         case 39://direita
         case 68:    moveRight = true; break;
 
         case 37://esquerda
         case 65:    moveLeft = true; break;
-
     }
 }
 
@@ -140,30 +135,55 @@ function onKeyUp(event){
     switch(event.keyCode){
 
         case 38://cima
-        case 87:    moveForward = false; break;
+        case 87:    moveForward = false; console.log("cuborotation:", cubo.rotation.z); console.log("posicao:", cubo.position); console.log("direcao:", direction); console.log("speed:", speed); break;
 
         case 40://baixo
-        case 83:    moveBackward = false; break;
+        case 83:    moveBackward = false; rotationSpeed *= -1; break;
 
         case 39://direita
         case 68:    moveRight = false; break;
-false
+
         case 37://esquerda
         case 65:    moveLeft = false; break;
-
     }
 }
 
 function animate(){
     requestAnimationFrame(animate);
     const time = performance.now();
-        console.log("rodando update");
-        if(moveLeft)
-            camera.translateX(-1);
-        if(moveRight)
-            camera.translateX(1);
-        if(moveForward)
-            camera.translateZ(-1);
-        if(moveBackward)
-            camera.translateZ(1);
+        if(moveLeft){
+            cubo.rotation.z += rotationSpeed;
+        }
+        if(moveRight){            
+            cubo.rotation.z += -rotationSpeed;
+        }
+        if(moveForward){
+            speed += accel;
+            if(speed > maxSpeed){
+                speed = maxSpeed
+            }
+        }
+        if(moveBackward){
+            speed -= accel;
+            if(speed < -maxSpeed){
+                speed = -maxSpeed
+            }
+        }
+        if(!moveForward && !moveBackward){
+            if(speed > 0){
+                speed -= deaccel;
+                if(speed < 0){
+                    speed = 0;
+                }
+            }else{
+                speed -= -deaccel;
+                if(speed > 0){
+                    speed = 0;
+                }
+            }
+        }
+        direction.normalize();
+        // direction.x = -1;
+        
+        cubo.translateOnAxis(direction, speed);
 }
