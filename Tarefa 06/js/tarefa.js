@@ -156,6 +156,8 @@ var loadObj = function(){
                 
                 object.position.y = -1;
 
+                object.AmbientLight
+
 
                 //object.rotation.y += 1;
 
@@ -182,7 +184,7 @@ var loadObj = function(){
             object.traverse( function ( child ) {
                         if ( child instanceof THREE.Mesh ) {
                             console.log(child);
-                            child.material.map = textureLoader.load("assets/textura/BabyRexColorRed.png");
+                            child.material.map = textureLoader.load("assets/textura/correio.png");
                             child.material.shininess = 0;
                         }
                     });
@@ -232,7 +234,7 @@ var loadObj = function(){
 
             object.position.z = -40;
             object.position.x = 70;
-            object.position.y = 0;
+            object.position.y = 0;          
 
             object.rotation.y -= 1.25;
             // object.rotation.x -= 0.85;
