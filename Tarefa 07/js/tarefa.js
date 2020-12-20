@@ -35,6 +35,7 @@ const noventa = Math.PI / 2;
 
 init();
 animate();
+rotateWheels();
 
 function init() {
 
@@ -48,7 +49,7 @@ function init() {
     createFloor();
     createVehicle();
     randomSpawner();
-    directionalLight();
+    // directionalLight();
     render();
 
 
@@ -135,7 +136,6 @@ function directionalLight(){
 }
 
 function randomSpawner(){
-
     fbxLoader = new THREE.FBXLoader();
     textureLoader = new THREE.TextureLoader();
 
@@ -157,17 +157,17 @@ function createVehicle(){
         object.traverse( function ( child ) {
             if (child.isMesh) {
                 child.material.map = textureLoader.load("assets/textura/correio.png");
-                child.material.shininess = 0;
+                // child.material.shininess = 1;
                 child.castShadow = true;
                 child.receiveShadow = true;
             }
         });
-
         object.castShadow = true;
         object.receiveShadow = true;
 
         object.rotation.y =  noventa * 2;
         object.rotation.x = noventa;
+
         scene.add(object);
 
         createWheel(100, 45, 120, 1, 0);
@@ -233,12 +233,17 @@ function createWheel(x, y, z ,scale, rotation){
         object.traverse( function ( child ) {
             if (child.isMesh) {
                 child.material.map = textureLoader.load("assets/textura/correio.png");
+                child.castShadow = true;
+                child.receiveShadow = true;
             }
         });
+        object.castShadow = true;
+        object.receiveShadow = true;
 
         object.rotation.y =  noventa * 2;
         object.rotation.x = noventa;
         object.rotation.z = rotation;
+
         vehicleLoaded[0].add(object);
 
         object.position.x += x;
@@ -247,54 +252,89 @@ function createWheel(x, y, z ,scale, rotation){
     } );
 }
 
-function rotateWheels(){
-
-}
-
 function animate(){
     requestAnimationFrame(animate);
     const time = performance.now();
-        if(speed < -0.1 || speed > 0.1){
-            if(speed < 0){     
-                if(moveLeft){
-                    vehicleLoaded[0].rotation.y += -rotationSpeed
-                }
-                if(moveRight){            
-                    vehicleLoaded[0].rotation.y += rotationSpeed
+
+    console.log(wheelLoaded[0].rotation.z);
+
+    if(moveLeft){
+        wheelLoaded[0].rotation.z += 4*rotationSpeed;
+        wheelLoaded[1].rotation.z += 4*rotationSpeed;
+        if(wheelLoaded[0].rotation.z > 0.5){
+            wheelLoaded[1].rotation.z = 0.5;
+            wheelLoaded[0].rotation.z = 0.5;
+        }
+    }
+    if(moveRight){
+        wheelLoaded[0].rotation.z += -4*rotationSpeed;
+        wheelLoaded[1].rotation.z += -4*rotationSpeed;
+        if(wheelLoaded[1].rotation.z < -0.5){
+            wheelLoaded[1].rotation.z = -0.5;
+            wheelLoaded[0].rotation.z = -0.5;
+        }
+    }
+    if(!moveRight && !moveLeft){
+        if(wheelLoaded[0].rotation != 0){
+            if(wheelLoaded[0].rotation.z > 0){
+                wheelLoaded[0].rotation.z -= rotationSpeed;
+                wheelLoaded[1].rotation.z -= rotationSpeed;
+                if(wheelLoaded[0].rotation.z < 0){
+                    wheelLoaded[0].rotation.z = 0;
+                    wheelLoaded[1].rotation.z = 0;
                 }
             }else{
-                if(moveLeft){
-                    vehicleLoaded[0].rotation.y += rotationSpeed
+                wheelLoaded[0].rotation.z -= -rotationSpeed;
+                wheelLoaded[1].rotation.z -= -rotationSpeed;
+                if(wheelLoaded[0].rotation.z > 0){
+                    wheelLoaded[0].rotation.z = 0;
+                    wheelLoaded[1].rotation.z = 0;
                 }
-                if(moveRight){            
-                    vehicleLoaded[0].rotation.y += -rotationSpeed
-                }
             }
         }
-        if(moveForward){
-            speed += accel;
-            if(speed > maxSpeed){
-                speed = maxSpeed
+    }
+
+    if(speed < -0.1 || speed > 0.1){
+        if(speed < 0){     
+            if(moveLeft){
+                vehicleLoaded[0].rotation.y += -rotationSpeed
+            }
+            if(moveRight){            
+                vehicleLoaded[0].rotation.y += rotationSpeed
+            }
+        }else{
+            if(moveLeft){
+                vehicleLoaded[0].rotation.y += rotationSpeed
+            }
+            if(moveRight){            
+                vehicleLoaded[0].rotation.y += -rotationSpeed
             }
         }
-        if(moveBackward){
-            speed -= accel;
-            if(speed < -maxSpeed){
-                speed = -maxSpeed
-            }
+    }
+    if(moveForward){
+        speed += accel;
+        if(speed > maxSpeed){
+            speed = maxSpeed
         }
-        if(!moveForward && !moveBackward){
+    }
+    if(moveBackward){
+        speed -= accel;
+        if(speed < -maxSpeed){
+            speed = -maxSpeed
+        }
+    }
+    if(!moveForward && !moveBackward){
+        if(speed > 0){
+            speed -= deaccel;
+            if(speed < 0){
+                speed = 0;
+            }
+        }else{
+            speed -= -deaccel;
             if(speed > 0){
-                speed -= deaccel;
-                if(speed < 0){
-                    speed = 0;
-                }
-            }else{
-                speed -= -deaccel;
-                if(speed > 0){
-                    speed = 0;
-                }
+                speed = 0;
             }
         }
-        vehicleLoaded[0].translateOnAxis(direction, speed);
+    }
+    vehicleLoaded[0].translateOnAxis(direction, speed);
 }
