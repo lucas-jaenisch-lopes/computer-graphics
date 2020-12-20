@@ -1,12 +1,16 @@
+//very basic variables to create our scene
 var scene;
 var camera;
 var renderer;
+var clock;
 
+//input
 var moveForward = false;
 var moveBackward = false;
 var moveLeft = false;
 var moveRight = false;
 
+//atributes of vehicle
 var direction = new THREE.Vector3(0, 0, 1);
 var speed = 0;
 var maxSpeed = 1;
@@ -16,58 +20,82 @@ var rotationSpeed = 0.05;
 
 var ambientLight;
 
+//collisions arrays
 var bouding = [];
 var boudingBox = [];
-var boudingTree = [];
+var boudingBoxes = [];
 
-var loadedObject = [];
-var objCarregado = [];
+//stuff loaded arrays
+var boxes = [];
 var vehicleLoaded = [];
 var wheelLoaded = [];
 
-var directionObject = [];
-
+//loaders to create stuff
 var objectLoader;
 var textureLoader;
+
+var loadFinished = false;
 
 
 const noventa = Math.PI / 2;
 
 init();
-animate();
-rotateWheels();
 
 function init() {
 
+    //initializing variables 
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0xcce0ff );
+    clock = new THREE.Clock();
+    fbxLoader = new THREE.FBXLoader();
+    textureLoader = new THREE.TextureLoader();
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
+    //creation functions to compose scene
     createCamera();
     createFloor();
     createVehicle();
     randomSpawner();
+    ambientLight();
     // directionalLight();
+
+    //render and loop
     render();
 
-
-    ambientLight = new THREE.AmbientLight(0X000000);
-    ambientLight.intensity = 1;
-
-    renderer.shadowMap.enable = true;
-    renderer.shadowMap.type = THREE.BasicShadowMap;
-
-    scene.add(new THREE.AmbientLight( 0x888888 ));
-
+    //listeners for input
     document.addEventListener('keydown', onKeyDown ); 
     document.addEventListener('keyup', onKeyUp );
 };
 
 function render() {
     requestAnimationFrame( render );
+    // let delta = clock.getDelta();
+
+    if(loadFinished){
+        animate();
+    }
+
+    if(loadFinished){
+        for(i=0; i< 7; i++) {
+            if(boudingBoxes[i].intersectsBox(boudingBox[0])){
+                console.log("destroy box");
+                scene.remove(boudingBoxes[i]);
+            }
+        }
+    }
+
+    bouding.forEach(a => {
+        a.update();
+        });
+
+    if(loadFinished){
+        boudingBox[0].setFromObject(vehicleLoaded[0].children[0]);
+    }
+
     renderer.render( scene, camera );
+
 };
 
 function onKeyDown(event){
@@ -112,6 +140,16 @@ function createCamera(){
     camera.rotation.x = Math.PI / 4;
 }
 
+function ambientLight(){
+    ambientLight = new THREE.AmbientLight(0X000000);
+    ambientLight.intensity = 1;
+
+    renderer.shadowMap.enable = true;
+    renderer.shadowMap.type = THREE.BasicShadowMap;
+
+    scene.add(new THREE.AmbientLight( 0x888888 ));   
+}
+
 function directionalLight(){
     //corPixel = corPixel * corLuzDirecional * intensidade * tetha ... (integração das cores do ambeinte).
 
@@ -136,23 +174,13 @@ function directionalLight(){
 }
 
 function randomSpawner(){
-    fbxLoader = new THREE.FBXLoader();
-    textureLoader = new THREE.TextureLoader();
-
     for (i=0; i<7; i++){
-        createBox(Math.random()*40*(Math.random() > 0.5 ? -1: 1), Math.random()*40*(Math.random() > 0.5 ? -1: 1), 10 , 2, 2, 2, 0xFFFFFF);
-        let voBH = new THREE.BoxHelper(objCarregado[i], 0xffff00);
-        scene.add(voBH);
+        createBox(Math.random()*40*(Math.random() > 0.5 ? -1: 1), Math.random()*40*(Math.random() > 0.5 ? -1: 1));
     }
 }
 
 function createVehicle(){
-
-    fbxLoader = new THREE.FBXLoader();
-    textureLoader = new THREE.TextureLoader();
-
     fbxLoader.load('assets/models/vehicle.fbx', function ( object ) {
-        vehicleLoaded.push(object);
         object.scale.set(0.04, 0.04, 0.04);
         object.traverse( function ( child ) {
             if (child.isMesh) {
@@ -162,6 +190,8 @@ function createVehicle(){
                 child.receiveShadow = true;
             }
         });
+
+        vehicleLoaded.push(object);
         object.castShadow = true;
         object.receiveShadow = true;
 
@@ -174,6 +204,13 @@ function createVehicle(){
         createWheel(-100, 45, 120, 1, noventa*2);
         createWheel(100, 45, -120, 1, 0);
         createWheel(-100, 45, -120, 1, noventa*2);
+
+        let box = new THREE.BoxHelper( object, 0xffff00 );
+        scene.add( box );
+        bouding.push(box);
+        
+        boxF = new THREE.Box3().setFromObject(object.children[0]);
+        boudingBox.push(boxF);
     } );
 }
 
@@ -193,19 +230,19 @@ function createFloor(){
 
     scene.add(ground);
 }
-
-function createBox(position_x, position_y, position_z, x,y,z, color){
+//recieves position for the mail box spawn position,
+function createBox(position_x, position_y){
     fbxLoader.load('assets/models/box.fbx',function(object){
-            objCarregado[i] = object;
             object.traverse( function ( child ) {
                         if ( child instanceof THREE.Mesh ) {
-                            console.log(child);
+                            // console.log(child);
                             child.material.map = textureLoader.load("assets/textura/box.png");
                             child.castShadow = true;
                             child.receiveShadow = true;
                         }
                     });
 
+            boxes.push(object);
             object.scale.x = 0.025;
             object.scale.y = 0.025;
             object.scale.z = 0.025;
@@ -217,13 +254,24 @@ function createBox(position_x, position_y, position_z, x,y,z, color){
             object.position.y = position_y;
 
             object.castShadow = true;
-            object.receiveShadow = true;
+            object.receiveShadow = true; 
 
-            scene.add(object);    
+            scene.add(object);  
+
+            let voBH = new THREE.BoxHelper(object, 0xffff00);
+            scene.add(voBH);
+            bouding.push(voBH);
+
+            object.children[0].geometry.computeBoundingBox();
+            boxF = new THREE.Box3().setFromObject(object.children[0]);
+            boudingBoxes.push(boxF);
+
+  
         },
     );
 }
 
+//receveis position for the wheel spawn position, left and right positio, front and back, and how high or low, its size and rotation
 function createWheel(x, y, z ,scale, rotation){
     fbxLoader = new THREE.FBXLoader();
     textureLoader = new THREE.TextureLoader();
@@ -249,15 +297,18 @@ function createWheel(x, y, z ,scale, rotation){
         object.position.x += x;
         object.position.y += y;
         object.position.z += z;
+
+        loadFinished = true;
     } );
 }
 
 function animate(){
-    requestAnimationFrame(animate);
+    // requestAnimationFrame(animate);
     const time = performance.now();
 
-    console.log(wheelLoaded[0].rotation.z);
+    // console.log(wheelLoaded[0].rotation.z);
 
+    //used for animating front wheels
     if(moveLeft){
         wheelLoaded[0].rotation.z += 4*rotationSpeed;
         wheelLoaded[1].rotation.z += 4*rotationSpeed;
@@ -267,6 +318,8 @@ function animate(){
         }
     }
     if(moveRight){
+        // scene.remove(bouding[0]);
+        // console.log("remove camera");
         wheelLoaded[0].rotation.z += -4*rotationSpeed;
         wheelLoaded[1].rotation.z += -4*rotationSpeed;
         if(wheelLoaded[1].rotation.z < -0.5){
@@ -294,6 +347,7 @@ function animate(){
         }
     }
 
+    //for applyng force and steering to vehicle
     if(speed < -0.1 || speed > 0.1){
         if(speed < 0){     
             if(moveLeft){
