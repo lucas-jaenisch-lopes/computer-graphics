@@ -31,6 +31,7 @@ var boxes = [];
 var vehicleLoaded = [];
 var wheelLoaded = [];
 var doorLoaded = [];
+var scenery = [];
 
 //loaders to create stuff
 var objectLoader;
@@ -59,9 +60,12 @@ function init() {
     createCamera();
     createFloor();
     createVehicle();
+    createBase();
     randomSpawner();
     ambientLight();
     // directionalLight();
+
+    scene.fog = new THREE.Fog( 0x002339, 150, 800 );
 
     //render and loop
     render();
@@ -142,7 +146,7 @@ function onKeyUp(event){
 
 function createCamera(){
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.set( 0, -100, 80 );
+    camera.position.set( 0, -100, 120 );
     camera.rotation.x = Math.PI / 4;
 }
 
@@ -179,6 +183,32 @@ function directionalLight(){
 
 }
 
+function createBase(){
+    fbxLoader.load('assets/models/base.fbx', function ( object ) {
+        object.scale.set(0.04, 0.04, 0.04);
+        object.traverse( function ( child ) {
+            if (child.isMesh) {
+                child.material.map = textureLoader.load("assets/textura/correio.png");
+                child.material.color = 0x000000;
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        scenery.push(object);
+        object.castShadow = true;
+        object.receiveShadow = true;
+
+        object.position.x = 0;
+        object.position.y = 130;
+
+        object.rotation.y =  0;
+        object.rotation.x = noventa;
+
+        scene.add(object);
+    } );
+}
+
 function randomSpawner(){
     for (i=0; i<7; i++){
         createBox(Math.random()*40*(Math.random() > 0.5 ? -1: 1), Math.random()*40*(Math.random() > 0.5 ? -1: 1));
@@ -203,7 +233,10 @@ function createVehicle(){
         object.castShadow = true;
         object.receiveShadow = true;
 
-        object.rotation.y =  noventa * 2;
+        object.position.x = 10;
+        object.position.y = 120;
+
+        object.rotation.y =  0;
         object.rotation.x = noventa;
 
         scene.add(object);
@@ -231,10 +264,8 @@ function createFloor(){
     material = new THREE.MeshStandardMaterial({map : groundTexture});
     groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
     groundTexture.repeat.set( 20, 20 );
-    groundTexture.encoding = THREE.sRGBEncoding;
-    groundTexture.anisotropy = 16;
-    ground = new  THREE.Mesh(new THREE.PlaneBufferGeometry(100, 100, 10),material);
-    ground.position.y -= 6;
+    ground = new  THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000, 10),material);
+    ground.position.y = 0;
 
     ground.receiveShadow = true;
 
