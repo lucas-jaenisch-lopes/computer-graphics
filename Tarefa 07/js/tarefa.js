@@ -9,6 +9,7 @@ var moveForward = false;
 var moveBackward = false;
 var moveLeft = false;
 var moveRight = false;
+var openDoor = false;
 
 //atributes of vehicle
 var direction = new THREE.Vector3(0, 0, 1);
@@ -29,6 +30,7 @@ var boudingBoxes = [];
 var boxes = [];
 var vehicleLoaded = [];
 var wheelLoaded = [];
+var doorLoaded = [];
 
 //loaders to create stuff
 var objectLoader;
@@ -114,6 +116,8 @@ function onKeyDown(event){
 
         case 37://esquerda
         case 65:    moveLeft = true; break;
+
+        case 32:    openDoor = true; break;
     }
 }
 
@@ -131,6 +135,8 @@ function onKeyUp(event){
 
         case 37://esquerda
         case 65:    moveLeft = false; break;
+
+        case 32:    openDoor = false; break;
     }
 }
 
@@ -144,17 +150,17 @@ function ambientLight(){
     ambientLight = new THREE.AmbientLight(0X000000);
     ambientLight.intensity = 1;
 
-    renderer.shadowMap.enable = true;
-    renderer.shadowMap.type = THREE.BasicShadowMap;
+    // renderer.shadowMap.enable = true;
+    // renderer.shadowMap.type = THREE.BasicShadowMap;
 
-    scene.add(new THREE.AmbientLight( 0x888888 ));   
+    scene.add(new THREE.AmbientLight(ambientLight));   
 }
 
 function directionalLight(){
     //corPixel = corPixel * corLuzDirecional * intensidade * tetha ... (integração das cores do ambeinte).
 
     directionalLight = new THREE.DirectionalLight(0xffffff, 1, 1000);
-    directionalLight.position.y = 250;
+    directionalLight.position.y = 0;
     directionalLight.castShadow = true;
 
     directionalLight.shadow.mapSize.width = 4096;
@@ -185,7 +191,9 @@ function createVehicle(){
         object.traverse( function ( child ) {
             if (child.isMesh) {
                 child.material.map = textureLoader.load("assets/textura/correio.png");
-                // child.material.shininess = 1;
+                child.material.color = 0x000000;
+                // child.material.aoMapIntensity = 0;
+                // child.material.wireframe = true;
                 child.castShadow = true;
                 child.receiveShadow = true;
             }
@@ -204,10 +212,12 @@ function createVehicle(){
         createWheel(-100, 45, 120, 1, noventa*2);
         createWheel(100, 45, -120, 1, 0);
         createWheel(-100, 45, -120, 1, noventa*2);
+        createDoor(90, 0, -190, 1, 0);
+        createDoor(-90, 0, -190, 1, noventa*2);
 
-        let box = new THREE.BoxHelper( object, 0xffff00 );
-        scene.add( box );
-        bouding.push(box);
+        // let box = new THREE.BoxHelper( object, 0xffff00 );
+        // scene.add( box );
+        // bouding.push(box);
         
         boxF = new THREE.Box3().setFromObject(object.children[0]);
         boudingBox.push(boxF);
@@ -237,6 +247,7 @@ function createBox(position_x, position_y){
                         if ( child instanceof THREE.Mesh ) {
                             // console.log(child);
                             child.material.map = textureLoader.load("assets/textura/box.png");
+                            child.material.color = 0x000000;
                             child.castShadow = true;
                             child.receiveShadow = true;
                         }
@@ -258,11 +269,11 @@ function createBox(position_x, position_y){
 
             scene.add(object);  
 
-            let voBH = new THREE.BoxHelper(object, 0xffff00);
-            scene.add(voBH);
-            bouding.push(voBH);
+            // let voBH = new THREE.BoxHelper(object, 0xffff00);
+            // scene.add(voBH);
+            // bouding.push(voBH);
 
-            object.children[0].geometry.computeBoundingBox();
+            // object.children[0].geometry.computeBoundingBox();
             boxF = new THREE.Box3().setFromObject(object.children[0]);
             boudingBoxes.push(boxF);
 
@@ -273,14 +284,13 @@ function createBox(position_x, position_y){
 
 //receveis position for the wheel spawn position, left and right positio, front and back, and how high or low, its size and rotation
 function createWheel(x, y, z ,scale, rotation){
-    fbxLoader = new THREE.FBXLoader();
-    textureLoader = new THREE.TextureLoader();
     fbxLoader.load('assets/models/wheel.fbx', function ( object ) {
         wheelLoaded.push(object);
         object.scale.set(scale, scale, scale);
         object.traverse( function ( child ) {
             if (child.isMesh) {
                 child.material.map = textureLoader.load("assets/textura/correio.png");
+                child.material.color = 0x000000;
                 child.castShadow = true;
                 child.receiveShadow = true;
             }
@@ -297,6 +307,33 @@ function createWheel(x, y, z ,scale, rotation){
         object.position.x += x;
         object.position.y += y;
         object.position.z += z;
+    } );
+}
+
+function createDoor(x, y, z ,scale, rotation){
+    fbxLoader.load('assets/models/door.fbx', function ( object ) {
+        doorLoaded.push(object);
+        object.scale.set(scale, scale, scale);
+        object.traverse( function ( child ) {
+            if (child.isMesh) {
+                child.material.map = textureLoader.load("assets/textura/correio.png");
+                child.material.color = 0x000000;
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+        object.castShadow = true;
+        object.receiveShadow = true;
+
+        object.rotation.y =  rotation;
+        object.rotation.x = noventa * 2;
+        object.rotation.z = noventa * 2;
+
+        vehicleLoaded[0].add(object);
+
+        object.position.x += x;
+        object.position.y += y;
+        object.position.z += z;
 
         loadFinished = true;
     } );
@@ -307,6 +344,19 @@ function animate(){
     const time = performance.now();
 
     // console.log(wheelLoaded[0].rotation.z);
+
+    if(openDoor){
+        if(!(doorLoaded[0].rotation.y > 2.5)){
+            doorLoaded[0].rotation.y += rotationSpeed;
+            doorLoaded[1].rotation.y += -rotationSpeed;
+        }
+    }
+    if(!openDoor){
+        if(doorLoaded[0].rotation.y >= 0){
+            doorLoaded[0].rotation.y -= rotationSpeed;
+            doorLoaded[1].rotation.y -= -rotationSpeed;
+        }
+    }
 
     //used for animating front wheels
     if(moveLeft){
@@ -366,6 +416,7 @@ function animate(){
         }
     }
     if(moveForward){
+        // console.log(boudingBox[0]);
         speed += accel;
         if(speed > maxSpeed){
             speed = maxSpeed
