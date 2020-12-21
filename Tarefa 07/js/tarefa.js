@@ -65,9 +65,6 @@ function init() {
     ambientLight();
     // directionalLight();
 
-    let mesh;
-
-
     scene.fog = new THREE.Fog( 0x002339, 150, 800 );
 
     //render and loop
